@@ -2,5 +2,5 @@
 FROM scratch
 
 ARG WASM_BINARY_PATH
-COPY ${WASM_BINARY_PATH} /wasm-add-header.wasm
-ENTRYPOINT [ "wasm-add-header.wasm" ]
+COPY ${WASM_BINARY_PATH} /plugin.wasm
+ENTRYPOINT [ "plugin.wasm" ]
