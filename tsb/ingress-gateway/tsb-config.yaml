@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: List
+items:
+  # tenant
+  - apiVersion: tsb.tetrate.io/v2
+    kind: Tenant
+    metadata:
+      name: tier2
+      annotations:
+        tsb.tetrate.io/organization: tetrate
+    spec:
+      displayName: Tier2
+  # workspaces
+  - apiVersion: tsb.tetrate.io/v2
+    kind: Workspace
+    metadata:
+      name: tier2-ws
+      annotations:
+        tsb.tetrate.io/organization: tetrate
+        tsb.tetrate.io/tenant: tier2
+    spec:
+      displayName: Tier2 Workspace
+      namespaceSelector:
+        names:
+          - "gke-sreehari-us-west2-3/tier2"
+ # gateway group
+  - apiVersion: gateway.tsb.tetrate.io/v2
+    kind: Group
+    metadata:
+      name: tier2-gg
+      annotations:
+        tsb.tetrate.io/organization: tetrate
+        tsb.tetrate.io/tenant: tier2
+        tsb.tetrate.io/workspace: tier2-ws
+    spec:
+      displayName: Tier2 Gateway Group
+      namespaceSelector:
+        names:
+          - "gke-sreehari-us-west2-3/tier2"
+  # gateway install
+  - apiVersion: install.tetrate.io/v1alpha1
+    kind: Tier1Gateway
+    metadata:
+      name: tier2-gateway
+      namespace: tier2
+    spec:
+      kubeSpec:
+        service:
+          type: LoadBalancer
+  # gateway resource
+  - apiVersion: gateway.tsb.tetrate.io/v2
+    kind: Gateway
+    metadata:
+      name: tier2-gateway
+      annotations:
+        tsb.tetrate.io/organization: tetrate
+        tsb.tetrate.io/tenant: tier2
+        tsb.tetrate.io/workspace: tier2-ws
+        tsb.tetrate.io/gatewayGroup: tier2-gg
+    spec:
+      displayName: Tier2 Gateway
+      workloadSelector:
+        namespace: tier2
+        labels:
+          app: tier2-gateway
+      http:
+        - hostname: httpbin.tetrate.io
+          name: httpbin
+          port: 80
+          routing:
+            rules:
+              - route:
+                  serviceDestination:
+                    host: "httpbin/httpbin.httpbin.svc.cluster.local"
+                    port: 8000
+      wasmPlugins:
+        - fqn: "organizations/tetrate/extensions/wasm-add-header"
+          config:
+            path: response
+            header: x-ingress-header
+            value: from tsb ingress gateway

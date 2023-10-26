@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: List
+items: 
+  - apiVersion: tsb.tetrate.io/v2
+    kind: Tenant
+    metadata:
+      name: httpbin
+      annotations: 
+        tsb.tetrate.io/organization: tetrate
+    spec:
+      displayName: Httpbin
+  - apiVersion: tsb.tetrate.io/v2
+    kind: Workspace
+    metadata:
+      name: httpbin-ws
+      annotations: 
+        tsb.tetrate.io/organization: tetrate
+        tsb.tetrate.io/tenant: httpbin
+    spec:
+      namespaceSelector:
+        names:
+          - "gke-sreehari-us-west2-3/httpbin"
+      displayName: httpbin-ws

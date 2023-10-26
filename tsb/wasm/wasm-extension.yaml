@@ -1,0 +1,25 @@
+apiVersion: extension.tsb.tetrate.io/v2
+kind: WasmExtension
+metadata:
+  name: wasm-add-header
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+spec:
+  image: oci://docker.io/sreeharikmarar/wasm-add-header:latest
+  source: https://github.com/sreeharikmarar/tsb-wasm-demo
+  config:
+    header: x-ingress-header
+    value: "powered by TSB"
+  description: |
+    This WASM plugin will add specified header in response
+    To use this add following into IngressGateway, Tier1Gateway or SecuritySettings
+
+    ```
+      extension:
+        - fqn: "organizations/tetrate/extensions/wasm-add-header"
+          config:
+            path: response
+            header: x-ingress-header
+            value: from tsb ingress gateway
+    ````
+    You must set a header and a value.
