@@ -67,19 +67,25 @@ func (p *pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPlugi
 	}
 
 	if !gjson.Valid(string(data)) {
-		proxywasm.LogCritical(`invalid configuration format; expected {"header": "<header name>", "value": "<header value>"}`)
+		proxywasm.LogCritical(`invalid configuration format; expected {"header": "<header name>", "value": "<header value>",  "path": "<adding path>"}`)
 		return types.OnPluginStartStatusFailed
 	}
 
 	p.headerName = strings.TrimSpace(gjson.Get(string(data), "header").Str)
 	p.headerValue = strings.TrimSpace(gjson.Get(string(data), "value").Str)
+	p.addingPath = strings.TrimSpace(gjson.Get(string(data), "path").Str)
 
 	if p.headerName == "" || p.headerValue == "" {
 		proxywasm.LogCritical(`invalid configuration format; expected {"header": "<header name>", "value": "<header value>"}`)
 		return types.OnPluginStartStatusFailed
 	}
 
-	proxywasm.LogInfof("header from config: %s = %s", p.headerName, p.headerValue)
+	if p.addingPath != "request" && p.addingPath != "response" {
+		proxywasm.LogCritical(`invalid configuration format; path can only request or response`)
+		return types.OnPluginStartStatusFailed
+	}
+
+	proxywasm.LogInfof("header from config: %s = %s, path: %s", p.headerName, p.headerValue, p.addingPath)
 
 	return types.OnPluginStartStatusOK
 }
@@ -89,6 +95,14 @@ func (ctx *httpHeaders) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 	err := proxywasm.ReplaceHttpRequestHeader("x-request-header", "changed/created by wasm")
 	if err != nil {
 		proxywasm.LogCritical("failed to set request header: x-request-header")
+	}
+
+	if ctx.addingPath == "request" {
+		proxywasm.LogWarnf("adding header to request: %s=%s", ctx.headerName, ctx.headerValue)
+
+		if err := proxywasm.AddHttpRequestHeader(ctx.headerName, ctx.headerValue); err != nil {
+			proxywasm.LogCriticalf("failed to set request headers: %v", err)
+		}
 	}
 
 	hs, err := proxywasm.GetHttpRequestHeaders()
@@ -112,8 +126,8 @@ func (ctx *httpHeaders) OnHttpResponseHeaders(_ int, _ bool) types.Action {
 		proxywasm.LogCriticalf("failed to set response constant header: %v", err)
 	}
 
-	// Add the header passed by arguments
-	if ctx.headerName != "" {
+	// Add headers at the response path
+	if ctx.addingPath == "response" {
 		if err := proxywasm.AddHttpResponseHeader(ctx.headerName, ctx.headerValue); err != nil {
 			proxywasm.LogCriticalf("failed to set response headers: %v", err)
 		}

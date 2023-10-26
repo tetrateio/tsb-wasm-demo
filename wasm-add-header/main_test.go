@@ -16,34 +16,165 @@ func TestHttpHeaders_OnHttpRequestHeaders(t *testing.T) {
 		host, reset := proxytest.NewHostEmulator(opt)
 		defer reset()
 
-		// Initialize http context.
-		id := host.InitializeHttpContext()
+		t.Run("add a default request header", func(t *testing.T) {
+			// Initialize http context.
+			id := host.InitializeHttpContext()
 
-		// Call OnHttpResponseHeaders.
-		hs := [][2]string{{"x-request-header", "test"}}
-		action := host.CallOnRequestHeaders(id,
-			hs, false)
-		require.Equal(t, types.ActionContinue, action)
+			// Call OnHttpRequesteHeaders.
+			hs := [][2]string{{"key", "value"}}
+			action := host.CallOnRequestHeaders(id,
+				hs, false)
+			require.Equal(t, types.ActionContinue, action)
 
-		// Check headers.
-		resultHeaders := host.GetCurrentRequestHeaders(id)
-		var found bool
-		for _, val := range resultHeaders {
-			if val[0] == "x-request-header" {
-				require.Equal(t, "changed/created by wasm", val[1])
-				found = true
+			resultHeaders := host.GetCurrentRequestHeaders(id)
+			var found bool
+			for _, val := range resultHeaders {
+				if val[0] == "x-request-header" {
+					require.Equal(t, "changed/created by wasm", val[1])
+					found = true
+				}
 			}
-		}
-		require.True(t, found)
+			require.True(t, found)
 
-		// Call OnHttpStreamDone.
-		host.CompleteHttpContext(id)
+			// Call OnHttpStreamDone.
+			host.CompleteHttpContext(id)
 
-		// Check Envoy logs.
-		logs := host.GetInfoLogs()
-		require.Contains(t, logs, fmt.Sprintf("%d finished", id))
-		require.Contains(t, logs, "request header --> x-request-header: changed/created by wasm")
+			// Check Envoy logs.
+			logs := host.GetInfoLogs()
+			require.Contains(t, logs, fmt.Sprintf("%d finished", id))
+			require.Contains(t, logs, "request header --> key: value")
+		})
+
+		t.Run("add a new request header", func(t *testing.T) {
+			// Initialize http context.
+			id := host.InitializeHttpContext()
+
+			// Call OnHttpRequesteHeaders.
+			hs := [][2]string{{"key", "value"}}
+			action := host.CallOnRequestHeaders(id,
+				hs, false)
+			require.Equal(t, types.ActionContinue, action)
+
+			resultHeaders := host.GetCurrentRequestHeaders(id)
+			var found bool
+			for _, val := range resultHeaders {
+				if val[0] == "key" {
+					require.Equal(t, "value", val[1])
+					found = true
+				}
+			}
+			require.True(t, found)
+
+			// Call OnHttpStreamDone.
+			host.CompleteHttpContext(id)
+
+			// Check Envoy logs.
+			logs := host.GetInfoLogs()
+			require.Contains(t, logs, fmt.Sprintf("%d finished", id))
+			require.Contains(t, logs, "request header --> key: value")
+		})
+
+		t.Run("modify the request header", func(t *testing.T) {
+			// Initialize http context.
+			id := host.InitializeHttpContext()
+
+			// Call OnHttpRequesteHeaders.
+			hs := [][2]string{{"x-request-header", "test"}, {"x-user-id", "123"}}
+			action := host.CallOnRequestHeaders(id,
+				hs, false)
+			require.Equal(t, types.ActionContinue, action)
+
+			// Check headers.
+			resultHeaders := host.GetCurrentRequestHeaders(id)
+			var found bool
+			for _, val := range resultHeaders {
+				if val[0] == "x-request-header" {
+					require.Equal(t, "changed/created by wasm", val[1])
+					found = true
+				}
+			}
+			require.True(t, found)
+
+			// Call OnHttpStreamDone.
+			host.CompleteHttpContext(id)
+
+			// Check Envoy logs.
+			logs := host.GetInfoLogs()
+			require.Contains(t, logs, fmt.Sprintf("%d finished", id))
+			require.Contains(t, logs, "request header --> x-request-header: changed/created by wasm")
+			require.Contains(t, logs, "request header --> x-user-id: 123")
+		})
 	})
+
+}
+
+func TestHttpHeaders_OnHttpResponseHeaders(t *testing.T) {
+	vmTest(t, func(t *testing.T, vm types.VMContext) {
+		opt := proxytest.NewEmulatorOption().WithVMContext(vm)
+		host, reset := proxytest.NewHostEmulator(opt)
+		defer reset()
+
+		t.Run("add a default response header", func(t *testing.T) {
+			// Initialize http context.
+			id := host.InitializeHttpContext()
+
+			// Call OnHttpRequesteHeaders.
+			hs := [][2]string{{"key", "value"}}
+			action := host.CallOnResponseHeaders(id,
+				hs, false)
+			require.Equal(t, types.ActionContinue, action)
+
+			resultHeaders := host.GetCurrentResponseHeaders(id)
+			var found bool
+			for _, val := range resultHeaders {
+				if val[0] == "x-proxy-wasm-go-sdk-example" {
+					require.Equal(t, "http_headers", val[1])
+					found = true
+				}
+			}
+			require.True(t, found)
+
+			// Call OnHttpStreamDone.
+			host.CompleteHttpContext(id)
+
+			// Check Envoy logs.
+			logs := host.GetInfoLogs()
+			require.Contains(t, logs, fmt.Sprintf("%d finished", id))
+			require.Contains(t, logs, "response header <-- x-proxy-wasm-go-sdk-example: http_headers")
+		})
+
+		t.Run("add a new response header", func(t *testing.T) {
+			// Initialize http context.
+			id := host.InitializeHttpContext()
+
+			// Call OnHttpRequesteHeaders.
+			hs := [][2]string{{"x-user-id", "123"}}
+			action := host.CallOnResponseHeaders(id,
+				hs, false)
+			require.Equal(t, types.ActionContinue, action)
+
+			// Check headers.
+			resultHeaders := host.GetCurrentResponseHeaders(id)
+			var found bool
+			for _, val := range resultHeaders {
+				if val[0] == "x-user-id" {
+					require.Equal(t, "123", val[1])
+					found = true
+				}
+			}
+			require.True(t, found)
+
+			// Call OnHttpStreamDone.
+			host.CompleteHttpContext(id)
+
+			// Check Envoy logs.
+			logs := host.GetInfoLogs()
+			require.Contains(t, logs, fmt.Sprintf("%d finished", id))
+			require.Contains(t, logs, "response header <-- x-proxy-wasm-go-sdk-example: http_headers")
+			require.Contains(t, logs, "response header <-- x-user-id: 123")
+		})
+	})
+
 }
 
 // vmTest executes f twice, once with a types.VMContext that executes plugin code directly
