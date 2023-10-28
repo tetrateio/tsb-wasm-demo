@@ -271,7 +271,7 @@ kubectl logs -l app=wasmfetcher -n istio-system -f
 
 ### Istio Configuration
 
-Once TSB translate `WasmExtension` to Istio's `WasmPlugin` definition, the image url will be updated to point to `wasmfetcher` url
+Once TSB translate `WasmExtension` configured as part of `Gateway` into Istio's `WasmPlugin` definition, the image url will be updated to point to `wasmfetcher` url
 
 ```yaml
 kubectl get wasmplugins.extensions.istio.io tier2-gateway-wasm-add-header0 -n tier2 -o yaml
