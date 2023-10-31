@@ -85,9 +85,12 @@ make docker-build
 
 To tag the Docker image and push it to a Docker regitry, run:
 
+**Note:** Before using the docker-push target, replace your-docker-repo with your actual Docker repository.
+
 ```sh
 make docker-push
 ```
+
 
 ## How to use WASM Extension in Istio Ingress Gateway
 
