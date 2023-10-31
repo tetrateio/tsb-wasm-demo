@@ -109,7 +109,7 @@ metadata:
     tsb.tetrate.io/organization: tetrate
 spec:
   image: oci://docker.io/sreeharikmarar/wasm-add-header:latest
-  source: https://github.com/sreeharikmarar/tsb-wasm-demo
+  source: https://github.com/tetrateio/tsb-wasm-demo
   config:
     header: x-ingress-header
     value: "powered by TSB"

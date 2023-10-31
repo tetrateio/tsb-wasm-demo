@@ -1,4 +1,4 @@
-module github.com/sreeharikmarar/tsb-wasm-demo/wasm-add-header
+module github.com/tetrateio/tsb-wasm-demo/wasm-add-header
 
 go 1.21.2
 
